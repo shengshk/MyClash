@@ -1,0 +1,137 @@
+# --- 基础配置（示例，复制为 aio.yaml 后按需修改）---
+#   cp data/aio.example.yaml data/aio.yaml
+global-ua: clash.meta
+port: 7890
+socks-port: 7891
+allow-lan: true
+mode: rule
+log-level: info
+external-controller: 0.0.0.0:9090
+secret: change-me
+geodata-mode: true
+geodata-loader: standard
+geo-auto-update: true
+geo-update-interval: 48
+geox-url:
+  geoip: https://testingcf.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat
+  geosite: https://testingcf.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat
+  mmdb: https://testingcf.jsdelivr.net/gh/alecthw/mmdb_china_ip_list@release/lite/Country.mmdb
+  asn: https://testingcf.jsdelivr.net/gh/xishang0128/geoip@release/GeoLite2-ASN.mmdb
+
+# --- 流量嗅探 ---
+sniffer:
+  enable: true
+  sniff:
+    HTTP:  {ports: [80, 8080-8880], override-destination: true}
+    TLS:   {ports: [443, 8443]}
+    QUIC:  {ports: [443, 8443]}
+  force-domain:
+    - "+.netflix.com"
+  skip-domain:
+    - "+.push.apple.com"
+  parse-pure-ip: true
+  force-dns-mapping: true
+
+# --- DNS ---
+dns:
+  enable: true
+  listen: 0.0.0.0:7874
+  enhanced-mode: fake-ip
+  fake-ip-range: 28.0.0.1/8
+  nameserver:
+    - 223.5.5.5
+    - 119.29.29.29
+  fake-ip-filter-mode: blacklist
+  fake-ip-filter:
+    - "+.lan"
+    - "+.local"
+
+# --- 订阅登记表（短名须与 proxy-providers 的 key / path 一致）---
+x-p1:  &p1  ProvA
+x-p1n: &p1n ProvA-NoHK
+x-p2:  &p2  ProvB
+x-p2n: &p2n ProvB-NoHK
+
+x-provider:     &provider     { type: http, interval: 3600, filter: '^(?!.*(邀请|官网|群组|流量|到期|剩余|重置|时间)).*$', health-check: {enable: true, url: http://www.gstatic.com/generate_204, interval: 60} }
+x-url-test:     &url-test     { type: url-test, url: "https://www.gstatic.com/generate_204", interval: 60, empty-fallback: REJECT, hidden: true, tolerance: 30 }
+x-fallback:     &fallback     { type: fallback, url: "https://www.gstatic.com/generate_204", interval: 60, tolerance: 30, empty-fallback: REJECT }
+x-no-hongkong:  &no-hongkong  "(?i)^(?!.*(香港|🇭🇰|港台|hong\\s*kong|\\bhk\\b)).*$"
+x-proxy-NoHK:   &proxy-NoHK   [*p1n, *p2n, DIRECT, ♻️ 永不失联, 🖐 手动选择]
+x-proxy:        &proxy        [*p1, *p2, DIRECT, ♻️ 永不失联, 🖐 手动选择]
+x-rule-set-domain: &rule-set-domain { type: http, behavior: domain, format: mrs, interval: 86400 }
+
+# --- 订阅（请换成你自己的 URL，勿提交真实链接）---
+proxy-providers:
+  ProvA:
+    <<: *provider
+    url: https://example.com/subscribe/prov-a?token=REPLACE_ME
+    path: ./providers/ProvA.yaml
+  ProvB:
+    <<: *provider
+    url: https://example.com/subscribe/prov-b?token=REPLACE_ME
+    path: ./providers/ProvB.yaml
+
+# --- 策略组 ---
+proxy-groups:
+  - {name: 🖐 手动选择, type: select, proxies: [*p1n, *p2n, *p1, *p2], include-all-providers: true}
+  - {name: ♻️ 永不失联, <<: *fallback, proxies: [*p1, *p2], hidden: true}
+  - {name: 🎯 墙上有名, type: select, proxies: *proxy}
+  - {name: ✈️ 即时通讯, type: select, proxies: *proxy}
+  - {name: 💾 极客哈勃, type: select, proxies: *proxy}
+  - {name: 🎞️ 油管视频, type: select, proxies: *proxy}
+  - {name: 🤖 人工智能, type: select, proxies: *proxy-NoHK}
+  - {name: 🌍️ 谷歌服务, type: select, proxies: *proxy}
+  - {name: 🍎 苹果微软, type: select, proxies: *proxy}
+  - {name: 🐟 漏网常见, type: select, proxies: *proxy}
+  - {name: 🐟 漏网之鱼, type: select, proxies: *proxy}
+  # 订阅基础分组
+  - {name: *p1n, <<: *url-test, use: [*p1], filter: *no-hongkong}
+  - {name: *p2n, <<: *url-test, use: [*p2], filter: *no-hongkong}
+  - {name: *p1, <<: *url-test, use: [*p1]}
+  - {name: *p2, <<: *url-test, use: [*p2]}
+
+# --- 分流 ---
+rules:
+  - GEOSITE,private,DIRECT
+  - GEOIP,private,DIRECT,no-resolve
+  - DST-PORT,853,REJECT
+  - RULE-SET,Encrypted_DNS_IP,REJECT,no-resolve
+  - RULE-SET,rule_classical_direct,DIRECT,no-resolve
+  - RULE-SET,rule_classical_vip,♻️ 永不失联
+  - RULE-SET,rule_classical_proxy,🎯 墙上有名
+  - GEOSITE,telegram,✈️ 即时通讯
+  - GEOSITE,openai,🤖 人工智能
+  - GEOSITE,github,💾 极客哈勃
+  - GEOSITE,youtube,🎞️ 油管视频
+  - GEOSITE,google,🌍️ 谷歌服务
+  - GEOSITE,gfw,🎯 墙上有名
+  - GEOIP,telegram,✈️ 即时通讯,no-resolve
+  - GEOIP,google,🌍️ 谷歌服务,no-resolve
+  - GEOSITE,cn,DIRECT
+  - GEOIP,cn,DIRECT,no-resolve
+  - DST-PORT,80,🐟 漏网常见,no-resolve
+  - DST-PORT,443,🐟 漏网常见,no-resolve
+  - MATCH,🐟 漏网之鱼
+
+rule-providers:
+  rule_classical_direct:
+    type: inline
+    behavior: classical
+    payload:
+      # 用 bot「新增规则」维护；此处仅示例
+      - DOMAIN-SUFFIX,example.com
+  rule_classical_vip:
+    type: inline
+    behavior: classical
+    payload: []
+  rule_classical_proxy:
+    type: inline
+    behavior: classical
+    payload:
+      - DOMAIN-SUFFIX,ipinfo.io
+  Encrypted_DNS_IP:
+    type: http
+    behavior: ipcidr
+    format: mrs
+    url: https://gcore.jsdelivr.net/gh/Aethersailor/Custom_OpenClash_Rules@main/rule/Encrypted_DNS_IP.mrs
+    interval: 900

@@ -1,0 +1,54 @@
+# MyClash — 示例 Compose
+#
+# 镜像托管在 GitHub Container Registry（不是 Docker Hub）：
+#   ghcr.io/shengshk/myclash:latest
+#
+# 推荐用法（拉取 GitHub 镜像）：
+#   mkdir myclash && cd myclash
+#   curl -fsSL -o compose.yml https://raw.githubusercontent.com/shengshk/myclash/main/compose.example.yml
+#   mkdir -p data
+#   curl -fsSL -o data/aio.yaml https://raw.githubusercontent.com/shengshk/myclash/main/data/aio.example.yaml
+#   # 编辑 compose.yml：TGBOT / DOMAIN*
+#   # 编辑 data/aio.yaml：secret、订阅等
+#   docker compose pull
+#   docker compose up -d
+#
+# 私有包若 pull 失败，先登录：
+#   echo YOUR_GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+#
+# 改源码时改为本地构建（注释 image，启用下面两行）：
+#   build: ./app
+#   image: myclash:local
+#
+# 勿把含密钥的 compose.yml 提交到仓库
+
+services:
+  myclash:
+    image: ghcr.io/shengshk/myclash:latest   # 从 GitHub（ghcr.io）拉镜像
+    # build: ./app
+    # image: myclash:local
+    container_name: myclash
+    restart: unless-stopped
+    network_mode: bridge
+    ports:
+      - "8006:8006"   # 综合订阅 HTTP（bridge）
+    environment:
+      - TZ=Asia/Shanghai
+      - YAML_PATH=/data/aio.yaml
+      # 格式: bot_token,允许的用户ID,...
+      - TGBOT=123456:ABC-DEF,your_telegram_id
+      # 综合订阅基址（可多条 DOMAIN / DOMAIN1…）；反代或直连到 8006，末尾勿带路径
+      - DOMAIN1=https://myclash.example.com
+      - DOMAIN2=http://127.0.0.1:8006
+      # - SUB_LISTEN=:8006
+      # 备份：总数上限；定时（5 段：分 时 日 月 周，日支持 */N）
+      - BACKUP_MAX=10
+      - BACKUP_CRON=0 2 */7 * *
+    volumes:
+      - ./data:/data
+    # 若用 Traefik，按需取消注释并改 Host
+    # labels:
+    #   - traefik.enable=true
+    #   - traefik.http.services.myclash.loadbalancer.server.port=8006
+    #   - traefik.http.routers.myclash.rule=Host(`myclash.example.com`)
+    #   - traefik.http.routers.myclash.service=myclash

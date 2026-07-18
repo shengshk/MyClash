@@ -1,0 +1,19 @@
+# 本地私有（勿提交）
+compose.yml
+data/aio.yaml
+data/aio.yaml.bak.*
+data/.aio.yaml.prewrite
+data/aio.yaml.base.bak
+data/.sub_token
+data/.sub_tokens.json
+data/.myclash_scrub.json
+data/backups/
+data/providers/
+*.tmp
+
+# Go / IDE
+app/bin/
+.idea/
+.vscode/
+*.swp
+.DS_Store
