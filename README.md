@@ -62,9 +62,9 @@
 从 GitHub Container Registry 拉取镜像（`ghcr.io`，不是 Docker Hub）：
 ```bash
 mkdir myclash && cd myclash
-curl -fsSL -o compose.yml https://raw.githubusercontent.com/shengshk/myclash/main/compose.example.yml
+curl -fsSL -o compose.yml https://raw.githubusercontent.com/shengshk/MyClash/main/compose.example.yml
 mkdir -p data
-curl -fsSL -o data/aio.yaml https://raw.githubusercontent.com/shengshk/myclash/main/data/aio.example.yaml
+curl -fsSL -o data/aio.yaml https://raw.githubusercontent.com/shengshk/MyClash/main/data/aio.example.yaml
 # 编辑 compose.yml：TGBOT、DOMAIN*
 # 编辑 data/aio.yaml：secret、订阅 URL、登记短名
 docker compose pull

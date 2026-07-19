@@ -5,9 +5,9 @@
 #
 # 推荐用法（拉取 GitHub 镜像）：
 #   mkdir myclash && cd myclash
-#   curl -fsSL -o compose.yml https://raw.githubusercontent.com/shengshk/myclash/main/compose.example.yml
+#   curl -fsSL -o compose.yml https://raw.githubusercontent.com/shengshk/MyClash/main/compose.example.yml
 #   mkdir -p data
-#   curl -fsSL -o data/aio.yaml https://raw.githubusercontent.com/shengshk/myclash/main/data/aio.example.yaml
+#   curl -fsSL -o data/aio.yaml https://raw.githubusercontent.com/shengshk/MyClash/main/data/aio.example.yaml
 #   # 编辑 compose.yml：TGBOT / DOMAIN*
 #   # 编辑 data/aio.yaml：secret、订阅等
 #   docker compose pull
